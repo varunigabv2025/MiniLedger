@@ -1,341 +1,436 @@
 # MiniLedger 💳
 
-A full-stack, personal finance and peer-to-peer loan tracking application built for the Full Stack Development internship assignment.
+**MiniLedger** is a full-stack peer-to-peer lending ledger that helps people record money lent to friends, track repayments, and identify overdue loans. It includes a React Native app built with Expo, a TypeScript/Express REST API, and PostgreSQL persistence.
+
+<p align="center">
+  <a href="https://miniledger-mobile.vercel.app/"><strong>🌐 Open the live demo</strong></a>
+  &nbsp; • &nbsp;
+  <a href="https://miniledger-mm1e.onrender.com/health"><strong>🩺 Backend health</strong></a>
+  &nbsp; • &nbsp;
+  <a href="https://github.com/varunigabv2025/MiniLedger"><strong>💻 Source code</strong></a>
+</p>
+
+> **Recruiter quick start:** Open the live demo and choose **⚡ Try Demo Account**. The demo login does not require an OTP or a terminal. The sample account is shared, so its data can be changed by other visitors; select **Reset Data** to restore the original sample ledger.
 
 ---
 
-## 📌 Project Overview
-MiniLedger helps individuals track peer loans lent to friends and acquaintances. It provides clear visibility over outstanding balances, repayment statuses, and overdue payments with a modern mobile interface and a secure, transactional PostgreSQL backend.
+## Table of contents
 
----
+- [Live deployment](#-live-deployment)
+- [Features](#-features)
+- [Tech stack](#-tech-stack)
+- [Demo account](#-recruiter-demo-account)
+- [Architecture](#-architecture)
+- [Getting started locally](#-getting-started-locally)
+- [Environment variables](#-environment-variables)
+- [Database schema](#-database-schema)
+- [API reference](#-api-reference)
+- [Testing](#-testing)
+- [Cloud deployment](#-cloud-deployment)
+- [Security and known limitations](#-security-and-known-limitations)
 
-## 🎨 Design System & Palette
+## 🌐 Live deployment
 
-MiniLedger follows a warm, sophisticated, minimalist personal-finance aesthetic using a strict 4-color foundation:
+| Component | URL |
+|---|---|
+| Web app | [https://miniledger-mobile.vercel.app/](https://miniledger-mobile.vercel.app/) |
+| Backend API base | [https://miniledger-mm1e.onrender.com](https://miniledger-mm1e.onrender.com) |
+| Backend health | [GET /health](https://miniledger-mm1e.onrender.com/health) |
+| Database health | [GET /health/db](https://miniledger-mm1e.onrender.com/health/db) |
+| GitHub repository | [varunigabv2025/MiniLedger](https://github.com/varunigabv2025/MiniLedger) |
 
-| Token | HEX Code | Role & Usage |
-| :--- | :--- | :--- |
-| **Cream** | `#F8F4E1` | Primary screen background, light surfaces, and spacious cards |
-| **Warm Taupe** | `#AF8F6F` | Secondary surfaces, muted accents, decorative elements, and border dividers |
-| **Earthy Brown** | `#74512D` | Primary interactive buttons, secondary headings, active navigation, and icons |
-| **Dark Espresso** | `#543310` | Primary text, prominent headings, portfolio hero card, and key metrics |
+The deployed web app uses the API base URL `https://miniledger-mm1e.onrender.com/api`. Render free services can spin down when inactive, so the first request after a period of inactivity may take longer.
 
-### Semantic Indicators
-- **Overdue Loans:** Muted red (`#9C0006`) with a clear `⚠️ OVERDUE` badge label.
-- **Repaid Loans:** Muted green (`#1B5E20`) with a clear `✓ REPAID` badge label.
-- **Pending Loans:** Earthy brown (`#74512D`) with a `⏳ PENDING` badge label.
+## ✨ Features
 
----
+### Loan tracking
+- Create a loan with a friend's name, amount in INR, and due date.
+- View the loan ledger and current repayment status.
+- Mark an unpaid loan as repaid; the repayment timestamp is recorded.
+- Prevent duplicate repayment actions.
+- Sort unpaid overdue loans first, upcoming unpaid loans next, and repaid loans last.
+- Validate amounts and calendar dates.
 
-## ⚡ Instant Recruiter Demo Access (No Setup or Terminal Required)
+### Financial dashboard
+- Total lent.
+- Total repaid.
+- Total outstanding.
+- Overdue amount.
+- Counts of all, pending, and repaid loans.
 
-For evaluators and recruiters who want to explore MiniLedger immediately without configuring PostgreSQL or checking backend terminal logs:
+Summary values are calculated by PostgreSQL for the signed-in user's loans.
 
-1. Launch the mobile app (or open `http://localhost:8081` in your browser).
-2. On the **Login screen**, tap the prominent **⚡ Try Demo Account** button.
-3. You will immediately be authenticated via `POST /api/auth/demo-login` and directed to the Dashboard with pre-seeded sample data:
-   - **Overdue Loan:** *Neha Gupta (Demo)* — ₹12,000 (highlighted in red, prioritized first).
-   - **Pending Loans:** *Rohan Sharma (Demo)* (₹7,500) and *Pooja Mehta (Demo)* (₹3,200).
-   - **Settled Loan:** *Vikram Malhotra (Demo)* — ₹4,500 with settlement timestamp.
-   - **Live SQL Aggregation:** ₹27,200 Total Lent, ₹4,500 Repaid, ₹22,700 Outstanding, and ₹12,000 Overdue.
-4. **Interactive & Resettable:**
-   - Feel free to record new loans, attach receipt photos, or mark loans as repaid.
-   - All actions are strictly isolated to the demo account (`+910000000000`). Real user records can never be viewed or modified.
-   - Tap **🔄 Reset Data** in the top demo banner anytime to restore the clean sample state.
+### Authentication
+- Phone-number login using a mock six-digit OTP.
+- OTP values are hashed before storage, expire after the configured duration, are one-time use, and are logged to the **backend runtime logs** for this demo flow.
+- JWT-based authentication for API requests.
+- One-tap recruiter demo login that skips OTP.
+- Session token storage through Expo SecureStore, with a web-compatible fallback.
 
----
+> The OTP flow does **not** send a real SMS. For the deployed version, request an OTP from the web app and look in the Render service's **Logs** for the `[MiniLedger Mock OTP]` entry. Recruiters should use Demo Account instead.
 
-## ✨ Key Features
-- **Recruiter Demo Mode:** One-click instant login without OTP, populated with rich sample loans and one-click data reset.
-- **Phone Number Authentication:** Passwordless login using a mock 6-digit OTP printed securely to backend server logs.
-- **Peer Loan Ledger:** Create, view, and track loans lent to friends.
-- **Optional Receipt Photo Upload (Bonus Feature):**
-  - Attach an optional receipt or promissory note photo (JPEG/PNG up to 5MB) when recording a loan.
-  - View secure receipts directly within the app through an authenticated image viewer modal.
-  - Strict row-level ownership isolation preventing other users from viewing or modifying receipts (HTTP 403 Forbidden).
-  - Preserves local filesystem privacy: internal disk paths and raw image binaries are never exposed in JSON responses or server logs.
-- **Overdue Prioritization:** Unpaid loans whose due date has passed are highlighted in red and ordered first.
-- **Financial Summary Dashboard:** Real-time metrics for Total Lent, Total Repaid, Total Outstanding, and Overdue Amount computed directly via SQL aggregation.
-- **One-Tap Repayment:** Mark outstanding loans as repaid with duplicate repayment prevention.
-- **Data Isolation:** Row-level security through user-scoped queries—users can only access and manage their own financial data.
-- **Session Persistence:** Cross-platform secure token storage using `expo-secure-store`.
+### Receipt photos
+- Optionally attach a JPEG/PNG receipt to a loan.
+- Upload limit: 5 MB per image.
+- View the receipt through an authenticated endpoint.
+- Receipt access is checked against the authenticated loan owner.
 
----
+### UI and usability
+- Warm, accessible cream-and-earthy-brown color system.
+- Status badges for overdue, pending, and repaid loans.
+- Responsive Expo web build and React Native mobile screens.
+- Dashboard refresh, loading and error feedback, and demo reset controls.
 
-## 🛠️ Technology Stack
+## 🧪 Recruiter demo account
 
-### Backend
-- **Runtime:** Node.js (v22+)
-- **Framework:** Express.js with TypeScript
-- **Execution & Dev Server:** `tsx`
-- **Database:** PostgreSQL 18 with `pg` connection pool
-- **File Uploads:** `multer` (MIME and size validation, isolated storage)
-- **Validation:** Zod
-- **Security & Utilities:** `cors`, `dotenv`, `jsonwebtoken`, `bcryptjs`
-- **Testing:** Jest & Supertest (47 automated integration tests)
+1. Open [MiniLedger](https://miniledger-mobile.vercel.app/).
+2. Click **⚡ Try Demo Account**.
+3. Explore the seeded ledger, add a test loan, mark a loan as repaid, or upload a sample receipt.
+4. Click **🔄 Reset Data** in the demo banner to restore the initial sample data.
 
-### Mobile App
-- **Framework:** React Native with Expo (SDK 58, TypeScript)
-- **Image Picker:** `expo-image-picker` with client-side file size and MIME checks
-- **State & Navigation:** State-driven native navigation with hardware `BackHandler` support
-- **Secure Storage:** `expo-secure-store`
-- **API Client:** Configurable native fetch client with automatic Bearer JWT attachment and Blob/DataURI receipt streaming
-- **UI:** Custom theme system implementing the 4-color palette
+The initial demo ledger includes:
 
----
+| Sample loan | Amount | Initial status |
+|---|---:|---|
+| Neha Gupta (Demo) | ₹12,000 | Overdue, unpaid |
+| Rohan Sharma (Demo) | ₹7,500 | Pending |
+| Pooja Mehta (Demo) | ₹3,200 | Pending |
+| Vikram Malhotra (Demo) | ₹4,500 | Repaid |
 
-## 🏛️ Architecture & Folder Structure
+Initial summary: **₹27,200 total lent**, **₹4,500 repaid**, **₹22,700 outstanding**, and **₹12,000 overdue**. Dates are generated relative to the time the demo data is seeded. Since this is a shared demo account, another visitor may change the ledger; use Reset Data to return to the sample state.
+
+## 🛠️ Tech stack
+
+| Layer | Technologies |
+|---|---|
+| Mobile and web UI | React Native, Expo, TypeScript, React Native Web |
+| Navigation and platform storage | State-driven screen navigation, Expo SecureStore |
+| Receipt picker | Expo Image Picker |
+| Backend | Node.js, Express, TypeScript |
+| Database | PostgreSQL, `pg` connection pool |
+| Validation | Zod |
+| Authentication | bcryptjs, JSON Web Tokens (JWT) |
+| Uploads | Multer |
+| Tests | Jest, Supertest |
+
+## 🏗️ Architecture
 
 ```text
 MiniLedger/
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Environment variable parser and Zod validator
-│   │   ├── db/              # PostgreSQL pool client and connection lifecycle
-│   │   ├── middleware/      # Auth, error, upload, and Zod validation middleware
-│   │   ├── routes/          # Auth, loan, and summary Express routes
-│   │   ├── services/        # Business logic and database query operations
-│   │   ├── app.ts           # Express app setup and middleware pipeline
-│   │   └── index.ts         # Server entrypoint with graceful shutdown
-│   ├── tests/               # Jest & Supertest integration tests (47 tests)
-│   ├── uploads/receipts/    # Local demo storage for uploaded receipts (gitignored)
-│   ├── .env.example         # Environment template
+│   │   ├── config/       # Environment parsing and validation
+│   │   ├── db/           # PostgreSQL connection pool
+│   │   ├── middleware/   # Authentication, validation, errors, receipt upload
+│   │   ├── routes/       # Auth, loans, summary, health
+│   │   ├── services/     # Authentication and loan business logic
+│   │   ├── app.ts        # Express application and API routes
+│   │   └── index.ts      # Server entry point
+│   ├── tests/            # Backend integration tests
+│   ├── .env.example
 │   ├── package.json
 │   └── tsconfig.json
 ├── mobile/
 │   ├── src/
-│   │   ├── api/             # API client, receipt upload, and streaming helpers
-│   │   ├── components/      # Reusable UI cards, headers, inputs, and buttons
-│   │   ├── navigation/      # Screen routing and session management
-│   │   ├── screens/         # Login, OTP, Dashboard, and Add Loan screens
-│   │   ├── theme/           # Color palette, spacing, and shadows
-│   │   ├── types/           # Shared TypeScript interfaces
-│   │   └── utils/           # Currency, date, and secure storage helpers
+│   │   ├── api/          # API client
+│   │   ├── components/   # Reusable interface components
+│   │   ├── navigation/   # Authentication and screen flow
+│   │   ├── screens/      # Login, OTP, dashboard, add loan
+│   │   ├── theme/        # Colors and design tokens
+│   │   ├── types/
+│   │   └── utils/        # Currency, date, and storage helpers
 │   ├── App.tsx
 │   ├── app.json
-│   ├── package.json
-│   └── tsconfig.json
-├── README.md
-└── .gitignore
+│   └── package.json
+└── README.md
 ```
 
----
+### Color palette
 
-## 📋 Prerequisites
-- **Node.js:** v18+ (tested on v22.x)
-- **npm:** v10+
-- **PostgreSQL:** 18+ (running locally on port 5432)
-- **Expo Go** app on iOS / Android or an emulator / web browser for mobile testing
+| Token | Color | Use |
+|---|---|---|
+| Cream | `#F8F4E1` | Main backgrounds |
+| Warm taupe | `#AF8F6F` | Secondary accents and borders |
+| Earthy brown | `#74512D` | Buttons and key actions |
+| Dark espresso | `#543310` | Headings and primary text |
+| Overdue | `#9C0006` | Overdue status |
+| Repaid | `#1B5E20` | Repaid status |
 
----
+## 🚀 Getting started locally
 
-## 🗄️ PostgreSQL Setup & Database Schema
+### Prerequisites
+- Node.js and npm.
+- PostgreSQL, unless using a remote PostgreSQL database.
+- An Expo-supported browser, Android device/emulator, or iOS simulator for mobile testing.
 
-The application connects to a local database named `miniledger` with the following tables in schema `public`:
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/varunigabv2025/MiniLedger.git
+cd MiniLedger
+```
+
+### 2. Configure the backend
+
+```bash
+cd backend
+npm ci
+```
+
+Create a local environment file from the template:
+
+**Windows PowerShell**
+```powershell
+Copy-Item .env.example .env
+```
+
+**macOS/Linux**
+```bash
+cp .env.example .env
+```
+
+Update `.env` with your local PostgreSQL credentials or a `DATABASE_URL`, plus a private development `JWT_SECRET`. Never commit `.env`.
+
+Create the database and schema described in [Database schema](#-database-schema), then start the API:
+
+```bash
+npm run dev
+```
+
+By default the API listens on `http://localhost:5000`. Check [http://localhost:5000/health](http://localhost:5000/health) and [http://localhost:5000/health/db](http://localhost:5000/health/db).
+
+### 3. Run the Expo app
+
+Open a second terminal:
+
+```bash
+cd mobile
+npm ci
+```
+
+For a local web session, set the API URL in the mobile app's environment (for example, create `mobile/.env` containing `EXPO_PUBLIC_API_URL=http://localhost:5000/api`) and run:
+
+```bash
+npx expo start
+```
+
+Press `w` to open the web build, or follow the Expo CLI prompts for a device or emulator. On a physical phone, `localhost` means the phone itself; use your computer's LAN IP for local testing on the same Wi-Fi, or use the deployed API URL.
+
+For the deployed website and Android build, use:
+
+```env
+EXPO_PUBLIC_API_URL=https://miniledger-mm1e.onrender.com/api
+```
+
+Expo embeds `EXPO_PUBLIC_*` values into the client bundle at build time. This variable is a public API URL; do not put database credentials, the JWT signing key, or other secrets in it.
+
+## 🔐 Environment variables
+
+Backend variables are read from `backend/.env` locally and from the hosting provider's environment-variable settings in production.
+
+| Variable | Required / default | Purpose |
+|---|---|---|
+| `NODE_ENV` | Defaults to `development` | Runtime mode; use `production` on Render |
+| `PORT` | Defaults to `5000`; Render assigns this automatically | HTTP port |
+| `DATABASE_URL` | Optional if individual `DB_*` values are supplied | PostgreSQL connection string; use the Neon connection string in production |
+| `DB_HOST` | `localhost` | Local database host when not using `DATABASE_URL` |
+| `DB_PORT` | `5432` | Local database port |
+| `DB_NAME` | `miniledger` | Local database name |
+| `DB_USER` | `postgres` | Local database user |
+| `DB_PASSWORD` | Empty by default; configure locally | Local database password |
+| `JWT_SECRET` | Required outside test mode | Private JWT signing secret; generate a unique production value |
+| `JWT_EXPIRES_IN` | `7d` | JWT lifetime |
+| `OTP_EXPIRY_MINUTES` | `5` | OTP validity period |
+
+The mobile app uses `EXPO_PUBLIC_API_URL` to choose the API base URL. The deployed base is `https://miniledger-mm1e.onrender.com/api`.
+
+## 🗄️ Database schema
+
+MiniLedger uses the PostgreSQL `public` schema with three tables:
+
+- `users`: user ID, unique phone number, creation time.
+- `otp_codes`: phone number, hashed OTP, expiry, creation time.
+- `loans`: owner user ID, friend name, amount, due date, repayment state/timestamp, creation time, optional receipt filename and MIME type.
+
+For a fresh database, the following schema is compatible with the API and includes receipt metadata. Apply it to the intended database only. Do **not** drop or recreate tables on an existing installation.
 
 ```sql
--- users: user accounts identified by unique phone number
 CREATE TABLE IF NOT EXISTS public.users (
     id SERIAL PRIMARY KEY,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- otp_codes: stores hashed OTPs with expiry timestamps
 CREATE TABLE IF NOT EXISTS public.otp_codes (
     id SERIAL PRIMARY KEY,
-    phone VARCHAR(20) NOT NULL,
+    phone VARCHAR(15) NOT NULL,
     otp_hash VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- loans: peer loans tracked per user with optional receipt attachments
 CREATE TABLE IF NOT EXISTS public.loans (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     friend_name VARCHAR(255) NOT NULL,
     amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     due_date DATE NOT NULL,
-    is_repaid BOOLEAN DEFAULT FALSE NOT NULL,
-    repaid_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    is_repaid BOOLEAN DEFAULT FALSE,
+    repaid_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     receipt_filename VARCHAR(255),
     receipt_mimetype VARCHAR(50)
 );
 ```
 
-### Safe Additive Migration
-If updating an existing installation from Phase 4, the database migration is completely additive and non-destructive:
+If you created the core tables before adding receipt uploads, add the receipt metadata columns with this non-destructive migration:
+
 ```sql
-ALTER TABLE public.loans ADD COLUMN IF NOT EXISTS receipt_filename VARCHAR(255);
-ALTER TABLE public.loans ADD COLUMN IF NOT EXISTS receipt_mimetype VARCHAR(50);
+ALTER TABLE public.loans
+  ADD COLUMN IF NOT EXISTS receipt_filename VARCHAR(255);
+
+ALTER TABLE public.loans
+  ADD COLUMN IF NOT EXISTS receipt_mimetype VARCHAR(50);
 ```
 
----
+The currently deployed Neon database was provisioned separately for this project. Check the selected Neon database and table columns before applying SQL; these statements do not migrate old records from a separate local PostgreSQL installation.
 
-## ⚙️ Backend Setup & Environment Variables
+## 📡 API reference
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Copy the template to create `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-3. Open `.env` and fill in your PostgreSQL credentials:
-   ```env
-   PORT=5000
-   NODE_ENV=development
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=miniledger
-   DB_USER=postgres
-   DB_PASSWORD=your_actual_postgres_password
-   JWT_SECRET=your_secure_jwt_secret_key
-   JWT_EXPIRES_IN=7d
-   OTP_EXPIRY_MINUTES=5
-   ```
-   > ⚠️ **Important:** Never commit the `.env` file to Git.
+The production API prefix is `https://miniledger-mm1e.onrender.com/api`. Authenticated endpoints require `Authorization: Bearer <token>`.
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   The backend server runs at `http://localhost:5000`.
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/health` | No | Basic API health |
+| `GET` | `/health/db` | No | Check PostgreSQL connectivity |
+| `POST` | `/api/auth/request-otp` | No | Request a mock OTP; body: `{ "phone": "9876543210" }` |
+| `POST` | `/api/auth/verify-otp` | No | Verify OTP; body: `{ "phone": "9876543210", "otp": "123456" }` |
+| `POST` | `/api/auth/demo-login` | No | Sign in to the isolated recruiter demo account |
+| `POST` | `/api/auth/demo-reset` | Demo token | Restore sample demo loans |
+| `GET` | `/api/loans` | Yes | List only the current user's loans |
+| `POST` | `/api/loans` | Yes | Create a loan |
+| `PATCH` | `/api/loans/:id/repay` | Yes | Mark a loan as repaid |
+| `POST` | `/api/loans/:id/receipt` | Yes | Upload a receipt using multipart field `receipt` |
+| `GET` | `/api/loans/:id/receipt` | Yes | Stream the loan's receipt image |
+| `GET` | `/api/summary` | Yes | Get current user's loan totals |
 
----
+### Create loan request example
 
-## 📱 Mobile App Setup & API Configuration
+```http
+POST /api/loans
+Authorization: Bearer <token>
+Content-Type: application/json
+```
 
-1. Navigate to the mobile directory:
-   ```bash
-   cd mobile
-   npm install
-   ```
+```json
+{
+  "friendName": "Aarav",
+  "amount": 1500,
+  "dueDate": "2026-12-15"
+}
+```
 
-2. **Configure Backend URL in `mobile/src/api/client.ts`:**
-   - **Android Emulator:** `http://10.0.2.2:5000/api` (Default for Android)
-   - **iOS Simulator / Web:** `http://localhost:5000/api` (Default for iOS / Web)
-   - **Physical Device (via Expo Go):** Change `DEFAULT_URL` to `http://<YOUR_COMPUTER_LAN_IP>:5000/api` (e.g. `http://192.168.1.15:5000/api`). Ensure your computer and phone are connected to the same Wi-Fi network.
+The amount must be positive and the due date must be a valid calendar date in `YYYY-MM-DD` format. The API returns validation errors for malformed data.
 
-3. Start Expo:
-   ```bash
-   npx expo start
-   ```
-   - Press `w` to open in your web browser.
-   - Press `a` to open in Android Emulator.
-   - Scan the QR code with **Expo Go** on Android/iOS.
+## 🧪 Testing
 
----
+From the backend directory:
 
-## 📎 Receipt Upload Bonus Feature & Storage Strategy
-
-### Architecture & Endpoints
-- **Upload Endpoint:** `POST /api/loans/:id/receipt`
-  - Accepts `multipart/form-data` with single file field `receipt`.
-  - Enforces MIME validation (`image/jpeg`, `image/png`) and 5MB size limit.
-  - Assigns a cryptographic random filename (e.g., `receipt_1729528000_a3f...jpg`) to prevent collisions and path traversal.
-  - Updates `receipt_filename` and `receipt_mimetype` in PostgreSQL.
-- **Viewing Endpoint:** `GET /api/loans/:id/receipt`
-  - Protected endpoint requiring Bearer JWT.
-  - Strictly verifies that `loan.user_id === req.user.userId`. Unauthorized access returns `HTTP 403 Forbidden`.
-  - Streams file directly with appropriate `Content-Type` header (`res.sendFile`).
-  - Never leaks local filesystem paths or binary data into API JSON payloads or server logs.
-
-### Storage Strategy & Production Limitations
-- **Current Local Strategy:** Uploaded receipts are saved to `backend/uploads/receipts/` on the local filesystem. This directory is gitignored and ideal for local offline development, testing, and assessment demo.
-- **Production Cloud Considerations:** In production containerized environments (such as Docker, Kubernetes, AWS ECS, or Heroku), container local disks are ephemeral and will be wiped upon restarting or redeploying. Production implementations should replace local disk storage with cloud object storage (e.g., AWS S3, Google Cloud Storage, or Supabase Storage) using presigned upload/download URLs.
-
----
-
-## 🧪 Automated Testing
-
-Run the full integration test suite (covering health, auth/OTP, loans CRUD, repayments, duplicate repayments, summary calculations, receipt uploads, cross-user isolation, and recruiter demo accounts):
 ```bash
-cd backend
 npm test
+npm run build
 ```
 
-### Test Suite Summary (75 passing tests):
-- `health.test.ts`: Health check & PostgreSQL ping status (3 tests)
-- `auth.test.ts`: Mock OTP generation, rate limits, expiry, bcrypt verification, and JWT issuance (11 tests)
-- `loan.test.ts`: Loan creation, date validation, overdue sorting, duplicate repayment prevention, and SQL aggregate summary (21 tests)
-- `receipt.test.ts`: Receipt file upload, MIME type filter, 5MB limit rejection, cross-user 403 isolation, and photo retrieval (13 tests)
-- `demo.test.ts`: One-click recruiter demo authentication, non-duplicating sample loan seeding, strict cross-user isolation, and pristine sample data reset (11 tests)
-- `dueDate.test.ts`: Calendar due-date validation, leap year checks, impossible calendar dates rejection (16 tests)
+The project verification reported **75 tests across six suites passing**:
 
----
+| Suite | Coverage | Tests |
+|---|---|---:|
+| `health.test.ts` | Health endpoints and database ping | 3 |
+| `auth.test.ts` | OTP request/verification, expiry, throttling, JWT | 11 |
+| `loan.test.ts` | Loan creation, repayment, ordering, summary | 21 |
+| `receipt.test.ts` | Upload validation, retrieval, user isolation | 13 |
+| `demo.test.ts` | Demo login, sample seeding, isolation, reset | 11 |
+| `dueDate.test.ts` | Valid dates, leap years, invalid calendar dates | 16 |
+| **Total** | | **75** |
 
-## 🔑 How the Mock OTP Flow Works
+These are the latest reported local verification results; run the commands above to verify the current checkout.
 
-1. Enter your phone number on the mobile Login screen and tap **Get OTP Code**.
-2. Switch to your backend server terminal. You will see a log output like:
-   ```text
-   [MiniLedger Mock OTP] Phone: 9876543210 | Code: 295855 (Valid for 5 min)
-   ```
-3. Enter `295855` into the mobile app OTP screen and tap **Verify & Continue**.
-4. The backend verifies the bcrypt hash, deletes the OTP to prevent reuse, creates the user account if new, and returns a signed JWT.
-5. The mobile app stores the token in secure storage and navigates to the Dashboard.
+For the mobile app, run:
 
----
+```bash
+npx tsc --noEmit
+npx expo-doctor
+```
 
-## 🌐 Cloud Deployment Guide (Beyond Localhost)
+## ☁️ Cloud deployment
 
-To share a live public demo with recruiters without requiring them to run code locally or connect to `localhost`:
+### Database — Neon
 
-### 1. Database Deployment (Free Managed PostgreSQL)
-Deploy a managed PostgreSQL database using [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Render PostgreSQL](https://render.com):
-1. Create a new database project named `miniledger`.
-2. Open the SQL Editor and run the table creation scripts from the [PostgreSQL Setup & Database Schema](#-postgresql-setup--database-schema) section.
-3. Copy your external connection string:
-   ```text
-   DATABASE_URL=postgres://user:password@ep-cool-fog-12345.us-east-2.aws.neon.tech/miniledger?sslmode=require
-   ```
+1. Create a PostgreSQL project and select the correct branch and database.
+2. Apply the schema or migrations to that database.
+3. Copy its connection string from Neon's **Connect** dialog.
+4. Store the connection string in the backend host's private `DATABASE_URL` variable. Never commit it to GitHub.
 
-### 2. Backend Deployment (Render / Railway / Fly.io)
-Deploy the Node.js + Express backend to a cloud container host:
-1. Push your repository to GitHub.
-2. In [Render](https://render.com), create a new **Web Service** connected to your repository.
-3. Configure the service settings:
-   - **Root Directory:** `backend`
-   - **Build Command:** `npm install && npm run build`
-   - **Start Command:** `node dist/index.js`
-4. Set Environment Variables in Render:
-   ```env
-   NODE_ENV=production
-   PORT=5000
-   DATABASE_URL=postgres://user:password@host/miniledger?sslmode=require
-   JWT_SECRET=your_super_strong_production_jwt_secret_key_minimum_32_characters
-   JWT_EXPIRES_IN=7d
-   OTP_EXPIRY_MINUTES=5
-   ```
-5. Deploy the service. Render will provide a public HTTPS URL (e.g., `https://miniledger-api.onrender.com`).
-6. Test your public endpoint:
-   ```bash
-   curl https://miniledger-api.onrender.com/health
-   ```
+### Backend — Render
 
-### 3. Mobile Web App Deployment (Vercel / Netlify)
-Allow recruiters to access the mobile app directly via web browser without installing Expo:
-1. In the `mobile` directory, create a `.env.production` file (or set the build environment variable):
-   ```env
-   EXPO_PUBLIC_API_URL=https://miniledger-api.onrender.com/api
-   ```
-2. Build the static production bundle:
-   ```bash
-   cd mobile
-   npx expo export --platform web
-   ```
-3. Deploy the resulting `mobile/dist` directory to [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
-4. Recruiters can open the deployed URL, tap **⚡ Try Demo Account**, and test the full live application instantly with no installation!
+This repository contains the Express backend in `backend/`.
 
----
+| Render setting | Value |
+|---|---|
+| Root Directory | `backend` |
+| Runtime | Node |
+| Build Command | `npm ci --include=dev && npm run build` |
+| Start Command | `npm start` |
 
-## 📝 Limitations & Future Improvements
-- Production SMS gateway integration (e.g., Twilio/AWS SNS) to replace mock console OTP.
-- Cloud object storage (AWS S3 / GCS) with presigned URLs for persistent, scalable receipt photo storage.
-- Push notifications for upcoming and overdue loan reminders.
-- Multi-currency support.
+Set these variables in Render's service settings:
 
+- `NODE_ENV=production`
+- `DATABASE_URL=<private Neon connection string>`
+- `JWT_SECRET=<strong, randomly generated private secret>`
+- `JWT_EXPIRES_IN=7d`
+- `OTP_EXPIRY_MINUTES=5`
+
+Render provides `PORT`. After deployment, verify both `/health` and `/health/db`.
+
+### Web app — Vercel
+
+The Expo web app is in `mobile/`.
+
+| Vercel setting | Value |
+|---|---|
+| Root Directory | `mobile` |
+| Framework Preset | Other |
+| Build Command | `npx expo export --platform web` |
+| Output Directory | `dist` |
+| Install Command | Default detected npm install, or `npm ci` |
+
+Add `EXPO_PUBLIC_API_URL=https://miniledger-mm1e.onrender.com/api` as a **Production** environment variable, then deploy. Redeploy after changing an environment variable because Expo reads it during the build.
+
+### Android APK — Expo EAS Build
+
+An APK is the installable Android artifact; it is separate from the web deployment. To build from the local mobile workspace, make sure the Android package ID and `mobile/eas.json` preview APK profile are present and committed before building:
+
+```bash
+cd mobile
+npx eas-cli login
+npx eas-cli build --platform android --profile preview
+```
+
+Choose to create/link the EAS project if prompted. Generate a new Android keystore if you do not already have one you need to reuse. When the build finishes, use the APK URL returned by EAS. A public APK URL can be added here once a successful build is available.
+
+## 🔒 Security and known limitations
+
+- All user loan reads, writes, repayments, summaries, and receipt operations are scoped to the authenticated user's ID.
+- JWT signing secrets and database credentials belong only in backend environment variables.
+- Demo login is intentionally public and uses a shared account with sample data. Do not store real or sensitive financial data in it.
+- OTP is mock-only; the server does not send SMS. The OTP is emitted to backend runtime logs for development/evaluation.
+- Receipt images currently use local filesystem storage in `backend/uploads/receipts/`. This is suitable for local demos, but ephemeral cloud filesystems may lose uploaded images on restarts or redeployments. Persistent production storage should use object storage (for example, S3 or Supabase Storage).
+- Free hosting tiers may sleep, have resource limits, or change their terms. Check provider dashboards for current limits.
+- Google Play Store publication is separate from generating and sharing an APK.
+
+## 🗺️ Possible future improvements
+
+- Real SMS OTP provider.
+- Persistent object storage for receipt images.
+- Reminder notifications for approaching and overdue due dates.
+- Additional filtering, export, and reporting capabilities.
