@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../theme';
 import { InputField } from '../components/InputField';
@@ -21,6 +22,8 @@ interface OtpScreenProps {
   onBackToLogin: () => void;
   onAuthSuccess: (user: User, token: string) => void;
 }
+
+const ANDROID_STATUS_BAR = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 0;
 
 export const OtpScreen: React.FC<OtpScreenProps> = ({
   phone,
@@ -176,6 +179,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.cream,
+    paddingTop: ANDROID_STATUS_BAR,
   },
   keyboardView: {
     flex: 1,
@@ -183,7 +187,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'android' ? 36 : spacing.xl,
   },
   backButton: {
     marginBottom: spacing.md,
@@ -198,7 +204,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceCardLight,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
   },

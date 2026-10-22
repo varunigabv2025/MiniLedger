@@ -9,6 +9,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../theme';
 import { InputField } from '../components/InputField';
@@ -20,6 +21,8 @@ interface LoginScreenProps {
   onOtpRequested: (phone: string) => void;
   onAuthSuccess: (user: User) => void;
 }
+
+const ANDROID_STATUS_BAR = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 0;
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   onOtpRequested,
@@ -186,6 +189,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.cream,
+    paddingTop: ANDROID_STATUS_BAR,
   },
   keyboardView: {
     flex: 1,
@@ -193,32 +197,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'android' ? 36 : spacing.xl,
   },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   logoBadge: {
-    width: 64,
-    height: 64,
+    width: 54,
+    height: 54,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.cardEspresso,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   logoIcon: {
-    fontSize: 30,
+    fontSize: 26,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: colors.darkEspresso,
     letterSpacing: 0.5,
   },
   tagline: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.warmTaupe,
     letterSpacing: 1.5,
@@ -227,22 +233,22 @@ const styles = StyleSheet.create({
   formCard: {
     backgroundColor: colors.surfaceCardLight,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
   },
   formTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: colors.darkEspresso,
     marginBottom: spacing.xs,
   },
   formSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.darkEspresso,
     opacity: 0.75,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
+    lineHeight: 18,
+    marginBottom: spacing.md,
   },
   button: {
     marginTop: spacing.xs,
@@ -355,7 +361,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   footer: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
     alignItems: 'center',
   },
   footerText: {

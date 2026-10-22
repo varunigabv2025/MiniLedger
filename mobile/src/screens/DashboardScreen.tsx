@@ -10,12 +10,15 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../theme';
 import { SummaryCard } from '../components/SummaryCard';
 import { LoanCard } from '../components/LoanCard';
 import { api } from '../api/client';
 import { Loan, Summary, User } from '../types';
+
+const ANDROID_STATUS_BAR = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 0;
 
 interface DashboardScreenProps {
   user: User;
@@ -131,16 +134,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <View style={styles.logoBadge}>
             <Text style={styles.logoIcon}>💳</Text>
           </View>
-          <View>
+          <View style={styles.brandTextContainer}>
             <View style={styles.brandTitleRow}>
-              <Text style={styles.brandTitle}>MiniLedger</Text>
+              <Text style={styles.brandTitle} numberOfLines={1}>MiniLedger</Text>
               {isDemo && (
                 <View style={styles.demoHeaderBadge}>
                   <Text style={styles.demoHeaderBadgeText}>DEMO</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.userSubtitle}>
+            <Text style={styles.userSubtitle} numberOfLines={1} ellipsizeMode="tail">
               {isDemo ? `Demo Recruiter (${user.phone})` : user.phone}
             </Text>
           </View>
@@ -285,32 +288,43 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.cream,
+    paddingTop: ANDROID_STATUS_BAR,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.cream,
+    minHeight: 58,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: spacing.sm,
+    minWidth: 0,
   },
   logoBadge: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: borderRadius.md,
     backgroundColor: colors.cardEspresso,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
+    flexShrink: 0,
   },
   logoIcon: {
-    fontSize: 20,
+    fontSize: 18,
+  },
+  brandTextContainer: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
   brandTitleRow: {
     flexDirection: 'row',
@@ -318,7 +332,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   brandTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.darkEspresso,
   },
@@ -327,6 +341,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     paddingHorizontal: 5,
     paddingVertical: 1,
+    alignSelf: 'center',
   },
   demoHeaderBadgeText: {
     fontSize: 9,
@@ -335,9 +350,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   userSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.warmTaupe,
     fontWeight: '600',
+    marginTop: 1,
   },
   demoBanner: {
     backgroundColor: '#F5EFE6',
@@ -357,10 +373,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
+    marginRight: spacing.xs,
   },
   demoBannerIcon: {
     fontSize: 20,
     marginRight: spacing.xs + 2,
+    flexShrink: 0,
   },
   demoBannerTitle: {
     fontSize: 14,
@@ -377,7 +396,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: 6,
-    marginLeft: spacing.sm,
+    marginLeft: spacing.xs,
+    flexShrink: 0,
   },
   demoResetBtnText: {
     color: colors.cream,
@@ -393,6 +413,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   logoutButton: {
     paddingHorizontal: spacing.sm + 2,
@@ -401,6 +422,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceCardLight,
+    flexShrink: 0,
   },
   logoutButtonText: {
     fontSize: 12,
@@ -409,7 +431,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.md,
-    paddingBottom: 90, // Space for FAB
+    paddingBottom: Platform.OS === 'android' ? 120 : 100, // Generous clearance so cards & repay buttons are never covered by FAB or Android gesture bar
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -513,24 +535,25 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: Platform.OS === 'android' ? 26 : 22,
+    right: 20,
     backgroundColor: colors.earthyBrown,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.md + 4,
+    paddingVertical: 12,
     borderRadius: borderRadius.round,
+    elevation: 6,
   },
   fabIcon: {
     color: colors.cream,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     marginRight: spacing.xs,
   },
   fabText: {
     color: colors.cream,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.3,
   },

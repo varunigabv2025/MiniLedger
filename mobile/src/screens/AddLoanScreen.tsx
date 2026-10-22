@@ -11,6 +11,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, borderRadius, shadows } from '../theme';
@@ -24,6 +25,8 @@ interface AddLoanScreenProps {
   onBack: () => void;
   onLoanCreated: () => void;
 }
+
+const ANDROID_STATUS_BAR = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 0;
 
 interface SelectedReceipt {
   uri: string;
@@ -233,7 +236,7 @@ export const AddLoanScreen: React.FC<AddLoanScreenProps> = ({
           <TouchableOpacity onPress={onBack} style={styles.headerBack} activeOpacity={0.7}>
             <Text style={styles.headerBackText}>← Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Record New Loan</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>Record New Loan</Text>
           <View style={{ width: 70 }} />
         </View>
 
@@ -435,6 +438,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.cream,
+    paddingTop: ANDROID_STATUS_BAR,
   },
   keyboardView: {
     flex: 1,
@@ -443,11 +447,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.cream,
+    minHeight: 56,
   },
   headerBack: {
     width: 70,
@@ -458,17 +463,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.darkEspresso,
+    flex: 1,
+    textAlign: 'center',
   },
   scrollContent: {
-    padding: spacing.lg,
+    padding: spacing.md,
+    paddingBottom: Platform.OS === 'android' ? 40 : spacing.xl,
   },
   card: {
     backgroundColor: colors.surfaceCardLight,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
   },

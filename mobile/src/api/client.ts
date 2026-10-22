@@ -6,13 +6,18 @@ import { AuthVerifyResponse, CreateLoanPayload, Loan, Summary } from '../types';
  * Configurable API base URL with EXPO_PUBLIC_API_URL support for deployed environments.
  * 
  * Default fallback environments:
- * - Android Emulator: 'http://10.0.2.2:5000/api'
- * - iOS Simulator / Web: 'http://localhost:5000/api'
- * - Cloud/Production: Set EXPO_PUBLIC_API_URL (e.g. 'https://miniledger-backend.onrender.com/api')
+ * - Standalone APK / Production: 'https://miniledger-mm1e.onrender.com/api'
+ * - Local Android Emulator (DEV): 'http://10.0.2.2:5000/api'
+ * - Local iOS Simulator / Web (DEV): 'http://localhost:5000/api'
+ * - Cloud/Production: Set EXPO_PUBLIC_API_URL (e.g. 'https://miniledger-mm1e.onrender.com/api')
  */
 const getBaseUrl = (): string => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+  // Standalone APK and production builds must always point to the deployed Render backend
+  if (typeof __DEV__ !== 'undefined' && !__DEV__) {
+    return 'https://miniledger-mm1e.onrender.com/api';
   }
   return Platform.select({
     android: 'http://10.0.2.2:5000/api',

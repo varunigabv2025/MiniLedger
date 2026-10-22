@@ -79,9 +79,11 @@ export const LoanCard: React.FC<LoanCardProps> = ({ loan, onRepay, repaying = fa
               {loan.friendName.charAt(0).toUpperCase()}
             </Text>
           </View>
-          <View>
-            <Text style={styles.friendName}>{loan.friendName}</Text>
-            <Text style={styles.createdDate}>
+          <View style={styles.friendTextCol}>
+            <Text style={styles.friendName} numberOfLines={1} ellipsizeMode="tail">
+              {loan.friendName}
+            </Text>
+            <Text style={styles.createdDate} numberOfLines={1}>
               Lent on {formatDate(loan.createdAt)}
             </Text>
           </View>
@@ -238,6 +240,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
+    marginRight: spacing.xs,
   },
   avatar: {
     width: 38,
@@ -247,6 +251,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
+    flexShrink: 0,
+  },
+  friendTextCol: {
+    flex: 1,
+    minWidth: 0,
   },
   avatarText: {
     fontSize: 16,
@@ -265,6 +274,7 @@ const styles = StyleSheet.create({
   },
   badgesCol: {
     alignItems: 'flex-end',
+    flexShrink: 0,
     gap: 4,
   },
   badge: {

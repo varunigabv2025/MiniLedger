@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: colors.cardEspresso,
     borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    padding: spacing.md + 4,
     marginBottom: spacing.md,
   },
   heroHeader: {
@@ -138,12 +138,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   heroLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.cardEspressoSub,
     marginTop: spacing.xs,
   },
   heroAmount: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.cream,
     marginVertical: spacing.xs,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   metricValue: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.cream,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   subCard: {
     flex: 1,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.sm + 4,
   },
   normalSubCard: {
     backgroundColor: colors.surfaceCardCream,
@@ -201,14 +201,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   subCardTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.darkEspresso,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   subCardAmount: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     marginBottom: spacing.xs,
   },
