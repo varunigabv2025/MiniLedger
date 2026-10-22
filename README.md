@@ -5,12 +5,16 @@
 <p align="center">
   <a href="https://miniledger-mobile.vercel.app/"><strong>🌐 Open the live demo</strong></a>
   &nbsp; • &nbsp;
+  <a href="https://expo.dev/accounts/varuniga/projects/miniledger/builds/b89e2e16-8414-4e44-a68d-403aa3ed1c8b"><strong>📱 Android APK (EAS build)</strong></a>
+  &nbsp; • &nbsp;
   <a href="https://miniledger-mm1e.onrender.com/health"><strong>🩺 Backend health</strong></a>
   &nbsp; • &nbsp;
   <a href="https://github.com/varunigabv2025/MiniLedger"><strong>💻 Source code</strong></a>
 </p>
 
 > **Recruiter quick start:** Open the live demo and choose **⚡ Try Demo Account**. The demo login does not require an OTP or a terminal. The sample account is shared, so its data can be changed by other visitors; select **Reset Data** to restore the original sample ledger.
+
+> **Android app:** The [Expo EAS build page](https://expo.dev/accounts/varuniga/projects/miniledger/builds/b89e2e16-8414-4e44-a68d-403aa3ed1c8b) contains the tested APK artifact. Open the page and use its download option to obtain the installer. This is a direct build-page link, not a Play Store listing.
 
 ---
 
@@ -34,6 +38,7 @@
 | Component | URL |
 |---|---|
 | Web app | [https://miniledger-mobile.vercel.app/](https://miniledger-mobile.vercel.app/) |
+| Android APK build/download page | [Download APK from Expo EAS](https://expo.dev/accounts/varuniga/projects/miniledger/builds/b89e2e16-8414-4e44-a68d-403aa3ed1c8b) |
 | Backend API base | [https://miniledger-mm1e.onrender.com](https://miniledger-mm1e.onrender.com) |
 | Backend health | [GET /health](https://miniledger-mm1e.onrender.com/health) |
 | Database health | [GET /health/db](https://miniledger-mm1e.onrender.com/health/db) |
