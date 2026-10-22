@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, StyleSheet, BackHandler } from 'react-native';
 import { colors } from '../theme';
 import { storage } from '../utils/storage';
+import { api } from '../api/client';
 import { User } from '../types';
 import { LoginScreen } from '../screens/LoginScreen';
 import { OtpScreen } from '../screens/OtpScreen';
@@ -16,8 +17,11 @@ export const AppNavigator: React.FC = () => {
   const [pendingPhone, setPendingPhone] = useState<string>('');
   const [initializing, setInitializing] = useState(true);
 
-  // 1. Restore authenticated session on app restart
+  // 1. Restore authenticated session & kick off lightweight backend wake-up on app start
   useEffect(() => {
+    // Proactively ping health check to begin container spin-up immediately on app launch
+    api.wakeUpBackend();
+
     const restoreSession = async () => {
       try {
         const token = await storage.getToken();

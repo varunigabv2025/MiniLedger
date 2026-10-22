@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { colors, spacing, borderRadius, shadows } from '../theme';
 import { InputField } from '../components/InputField';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { api } from '../api/client';
+import { api, BackendConnectionStatus } from '../api/client';
 import { User } from '../types';
 
 interface LoginScreenProps {
@@ -32,6 +32,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [connectionStatus, setConnectionStatus] = useState<BackendConnectionStatus>(
+    api.getConnectionStatus()
+  );
+  const [connectionMessage, setConnectionMessage] = useState<string>('');
+  const [showConnectedNotice, setShowConnectedNotice] = useState(false);
+
+  // Subscribe to backend health and cold-start wake-up notifications
+  useEffect(() => {
+    let timer: any;
+    const unsubscribe = api.onConnectionStatusChange((status, message) => {
+      setConnectionStatus(status);
+      setConnectionMessage(message || '');
+      if (status === 'connected') {
+        setShowConnectedNotice(true);
+        timer = setTimeout(() => {
+          setShowConnectedNotice(false);
+        }, 3000);
+      } else {
+        setShowConnectedNotice(false);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleRequestOtp = async () => {
     const trimmed = phone.trim();
@@ -74,6 +102,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
+  const handleRetryWakeUp = () => {
+    setError(null);
+    api.wakeUpBackend(true);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -95,10 +128,72 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           {/* Form Card */}
           <View style={[styles.formCard, shadows.cardHighlight]}>
+            {/* Server Cold-Start / Connection Status Banner */}
+            {connectionStatus === 'cold_start' && (
+              <View style={styles.statusBannerColdStart}>
+                <ActivityIndicator
+                  size="small"
+                  color={colors.earthyBrown}
+                  style={styles.statusSpinner}
+                />
+                <View style={styles.statusTextCol}>
+                  <Text style={styles.statusTitle}>Connecting to MiniLedger…</Text>
+                  <Text style={styles.statusSubtitle}>
+                    The server may take up to a minute to wake up on the first request.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {showConnectedNotice && connectionStatus === 'connected' && (
+              <View style={styles.statusBannerConnected}>
+                <Text style={styles.statusConnectedIcon}>✓</Text>
+                <Text style={styles.statusConnectedText}>Connected to MiniLedger backend</Text>
+              </View>
+            )}
+
+            {connectionStatus === 'error' && (
+              <View style={styles.statusBannerError}>
+                <View style={styles.statusTextCol}>
+                  <Text style={styles.statusErrorTitle}>Backend Connection Notice</Text>
+                  <Text style={styles.statusErrorSubtitle}>
+                    {connectionMessage || 'Server took longer than expected to respond.'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={handleRetryWakeUp}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <Text style={styles.formTitle}>Welcome Back</Text>
             <Text style={styles.formSubtitle}>
               Log in with your phone number to access your personal ledger and track friend loans.
             </Text>
+
+            {/* Error Notification Alert */}
+            {error && (
+              <View style={styles.errorAlertBox}>
+                <View style={styles.errorAlertTextCol}>
+                  <Text style={styles.errorAlertText}>⚠️ {error}</Text>
+                </View>
+                {(error.includes('backend') ||
+                  error.includes('timeout') ||
+                  error.includes('connect')) && (
+                  <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={handleRetryWakeUp}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             <InputField
               label="Phone Number"
@@ -109,13 +204,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 setPhone(text);
                 if (error) setError(null);
               }}
-              error={error || undefined}
+              error={error && !error.includes('backend') && !error.includes('timeout') ? error : undefined}
               maxLength={15}
               autoFocus
             />
 
             <PrimaryButton
-              title="Get OTP Code"
+              title={
+                loading && (connectionStatus === 'cold_start' || connectionStatus === 'checking')
+                  ? 'Connecting to server…'
+                  : 'Get OTP Code'
+              }
               onPress={handleRequestOtp}
               loading={loading}
               disabled={loading || demoLoading || phone.trim().length < 10}
@@ -150,7 +249,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     </View>
                   </View>
                   <Text style={styles.demoButtonSubtitle}>
-                    Instant access • Preloaded sample loans • No OTP required
+                    {demoLoading &&
+                    (connectionStatus === 'cold_start' || connectionStatus === 'checking')
+                      ? 'Waking up server… this may take up to a minute'
+                      : 'Instant access • Preloaded sample loans • No OTP required'}
                   </Text>
                 </View>
               </View>
@@ -369,5 +471,111 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.placeholder,
     fontWeight: '500',
+  },
+  statusBannerColdStart: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF9F0',
+    borderWidth: 1,
+    borderColor: '#E6D3B3',
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    marginBottom: spacing.md,
+  },
+  statusSpinner: {
+    marginRight: spacing.sm,
+  },
+  statusTextCol: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.darkEspresso,
+  },
+  statusSubtitle: {
+    fontSize: 11,
+    color: colors.warmTaupe,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  statusBannerConnected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F9F3',
+    borderWidth: 1,
+    borderColor: '#C6E8D0',
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 4,
+    marginBottom: spacing.md,
+  },
+  statusConnectedIcon: {
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: '800',
+    marginRight: 6,
+  },
+  statusConnectedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  statusBannerError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.statusOverdueBg,
+    borderWidth: 1,
+    borderColor: colors.statusOverdueBorder,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  statusErrorTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.statusOverdue,
+  },
+  statusErrorSubtitle: {
+    fontSize: 11,
+    color: colors.statusOverdue,
+    opacity: 0.85,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  retryButton: {
+    backgroundColor: colors.earthyBrown,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.xs,
+  },
+  retryButtonText: {
+    color: colors.cream,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  errorAlertBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.statusOverdueBg,
+    borderWidth: 1,
+    borderColor: colors.statusOverdueBorder,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  errorAlertTextCol: {
+    flex: 1,
+  },
+  errorAlertText: {
+    fontSize: 12,
+    color: colors.statusOverdue,
+    fontWeight: '600',
+    lineHeight: 16,
   },
 });
