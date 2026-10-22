@@ -1,4 +1,6 @@
 import { Platform } from 'react-native';
+import { File as ExpoFile } from 'expo-file-system';
+import { fetch as expoFetch } from 'expo/fetch';
 import { storage } from '../utils/storage';
 import { AuthVerifyResponse, CreateLoanPayload, Loan, Summary } from '../types';
 
@@ -428,11 +430,9 @@ export const api = {
 
       formData.append('receipt', fileToUpload, filename);
     } else {
-      formData.append('receipt', {
-        uri: asset.uri,
-        name: filename,
-        type: mimeType,
-      } as any);
+      // Native Android / iOS: Use supported Expo SDK 58 File from expo-file-system
+      const file = new ExpoFile(asset.uri);
+      formData.append('receipt', file as unknown as Blob, filename);
     }
 
     const headers: Record<string, string> = {
@@ -442,11 +442,19 @@ export const api = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+    // Use expo/fetch on native which natively supports ExpoFile FormDataPart
+    const fetchImpl = Platform.OS === 'web' ? fetch : expoFetch;
+
+    let response: Response;
+    try {
+      response = await fetchImpl(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+    } catch (fetchErr: any) {
+      throw new Error(`Upload network error: ${fetchErr?.message || 'Could not connect to server'}`);
+    }
 
     let data: any;
     const contentType = response.headers.get('content-type');
@@ -461,11 +469,11 @@ export const api = {
     }
 
     if (!response.ok) {
-      const errMsg =
+      const serverMsg =
         (data && typeof data === 'object' && (data.error || data.message)) ||
         (typeof data === 'string' && data) ||
-        `Upload failed with status ${response.status}`;
-      throw new Error(errMsg);
+        'Server rejected the receipt upload';
+      throw new Error(`Upload failed (${response.status}): ${serverMsg}`);
     }
 
     return data;

@@ -153,6 +153,13 @@ export const AddLoanScreen: React.FC<AddLoanScreenProps> = ({
   };
 
   const handleCreateLoan = async () => {
+    // Safety guard: If a loan was already created and only the receipt failed,
+    // retrying must use the existing loan ID and never create a duplicate loan.
+    if (createdLoanForRetry) {
+      await handleRetryReceiptUpload();
+      return;
+    }
+
     setApiError(null);
     setReceiptUploadError(null);
     if (!validate()) return;
@@ -411,20 +418,26 @@ export const AddLoanScreen: React.FC<AddLoanScreenProps> = ({
             {/* Action Buttons */}
             <View style={styles.buttonGroup}>
               <PrimaryButton
-                title={loading ? 'Saving...' : 'Save Loan Record'}
-                onPress={handleCreateLoan}
-                loading={loading}
+                title={
+                  createdLoanForRetry
+                    ? (retryingReceipt ? 'Uploading Receipt...' : 'Retry Receipt Upload')
+                    : (loading ? 'Saving...' : 'Save Loan Record')
+                }
+                onPress={createdLoanForRetry ? handleRetryReceiptUpload : handleCreateLoan}
+                loading={loading || retryingReceipt}
                 disabled={loading || retryingReceipt}
                 style={styles.saveButton}
               />
 
               <TouchableOpacity
-                onPress={onBack}
+                onPress={createdLoanForRetry ? handleSkipReceiptAndFinish : onBack}
                 disabled={loading || retryingReceipt}
                 style={styles.cancelLink}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelLinkText}>Discard & Return</Text>
+                <Text style={styles.cancelLinkText}>
+                  {createdLoanForRetry ? 'Continue Without Receipt' : 'Discard & Return'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
